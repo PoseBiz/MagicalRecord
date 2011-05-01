@@ -30,8 +30,7 @@ static NSUInteger defaultBatchSize = kActiveRecordDefaultBatchSize;
 {
 	if (error)
 	{
-		ARLog(@"Error Requesting Data: %@", [error userInfo]);
-		//TODO: maybe call a delegate to handle the error? subclass/hook method for error?
+		DDLogError(@"Error Requesting Data: %@", [error userInfo]);
 	}
 }
 
@@ -114,7 +113,7 @@ static NSUInteger defaultBatchSize = kActiveRecordDefaultBatchSize;
 			}
 			else
 			{
-				ARLog(@"Property '%@' not found in %@ properties for %@", propertyName, [propDict count], NSStringFromClass(self));
+				DDLogWarn(@"Property '%@' not found in %@ properties for %@", propertyName, [propDict count], NSStringFromClass(self));
 			}
 		}
 	}

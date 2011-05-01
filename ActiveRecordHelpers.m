@@ -35,21 +35,21 @@
 				{
 					if ([e respondsToSelector:@selector(userInfo)])
 					{
-						ARLog(@"Error Details: %@", [e userInfo]);
+						DDLogError(@"Error Details: %@", [e userInfo]);
 					}
 					else
 					{
-						ARLog(@"Error Details: %@", e);
+						DDLogError(@"Error Details: %@", e);
 					}
 				}
 			}
 			else
 			{
-				ARLog(@"Error: %@", detailedError);
+				DDLogError(@"Error: %@", detailedError);
 			}
 		}
-		ARLog(@"Error Domain: %@", [error domain]);
-		ARLog(@"Recovery Suggestion: %@", [error localizedRecoverySuggestion]);	
+		DDLogError(@"Error Domain: %@", [error domain]);
+		DDLogError(@"Recovery Suggestion: %@", [error localizedRecoverySuggestion]);	
 	}
 }
 

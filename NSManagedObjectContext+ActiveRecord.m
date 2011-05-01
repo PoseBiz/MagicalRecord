@@ -70,7 +70,6 @@ static NSManagedObjectContext *defaultManageObjectContext = nil;
 
 - (void) observeContextOnMainThread:(NSManagedObjectContext *)otherContext
 {
-    //	ARLog(@"Start Observing on Main Thread");
 	[[NSNotificationCenter defaultCenter] addObserver:self
 											 selector:@selector(mergeChangesOnMainThread:)
 												 name:NSManagedObjectContextDidSaveNotification
@@ -79,7 +78,6 @@ static NSManagedObjectContext *defaultManageObjectContext = nil;
 
 - (void) stopObservingContext:(NSManagedObjectContext *)otherContext
 {
-    //	ARLog(@"Stop Observing Context");
 	[[NSNotificationCenter defaultCenter] removeObserver:self
 													name:NSManagedObjectContextDidSaveNotification
 												  object:otherContext];
@@ -87,7 +85,7 @@ static NSManagedObjectContext *defaultManageObjectContext = nil;
 
 - (void) mergeChangesFromNotification:(NSNotification *)notification
 {
-	ARLog(@"Merging changes to %@context%@", 
+	DDLogInfo(@"Merging changes to %@context%@", 
           self == [NSManagedObjectContext defaultContext] ? @"*** DEFAULT *** " : @"",
           ([NSThread isMainThread] ? @" *** on Main Thread ***" : @""));
 	[self mergeChangesFromContextDidSaveNotification:notification];
@@ -111,14 +109,18 @@ static NSManagedObjectContext *defaultManageObjectContext = nil;
 	BOOL saved = NO;
 	@try
 	{
-		ARLog(@"Saving %@Context%@", 
+		DDLogInfo(@"Saving %@Context%@", 
               self == [[self class] defaultContext] ? @" *** Default *** ": @"", 
               ([NSThread isMainThread] ? @" *** on Main Thread ***" : @""));
 		saved = [self save:&error];
 	}
 	@catch (NSException *exception)
 	{
-		ARLog(@"Problem saving: %@", (id)[exception userInfo] ?: (id)[exception reason]);
+		DDLogError(@"Problem saving: %@", (id)[exception userInfo] ?: (id)[exception reason]);
+#if !BUILD_ENV_APPSTORE && !BUILD_ENV_ADHOC
+        DDLogError(@"Verify that your data model hasn't changed recently!!! If it has delete the app and rebuild!");
+        abort();
+#endif
 	}
 
 	[ActiveRecordHelpers handleErrors:error];
@@ -172,7 +174,7 @@ static NSManagedObjectContext *defaultManageObjectContext = nil;
 	NSManagedObjectContext *context = nil;
     if (coordinator != nil)
 	{
-        ARLog(@"Creating MOContext %@", [NSThread isMainThread] ? @" *** On Main Thread ***" : @"");
+        DDLogInfo(@"Creating MOContext %@", [NSThread isMainThread] ? @" *** On Main Thread ***" : @"");
         context = [[NSManagedObjectContext alloc] init];
         [context setPersistentStoreCoordinator:coordinator];
     }
