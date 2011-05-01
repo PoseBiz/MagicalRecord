@@ -11,6 +11,7 @@
 #import <objc/runtime.h>
 
 static NSManagedObjectContext *defaultManageObjectContext = nil;
+static NSString const * kActiveRecordManagedObjectContextKey = @"ActiveRecord_NSManagedObjectContextForThreadKey";
 
 @implementation NSManagedObjectContext (ActiveRecord)
 
@@ -40,6 +41,10 @@ static NSManagedObjectContext *defaultManageObjectContext = nil;
     });
 }
 
++ (void) resetContextForCurrentThread {
+    [[NSManagedObjectContext contextForCurrentThread] reset];
+}
+
 + (NSManagedObjectContext *) contextForCurrentThread
 {
 	if ( [NSThread isMainThread] )
@@ -49,12 +54,11 @@ static NSManagedObjectContext *defaultManageObjectContext = nil;
 	else
 	{
 		NSMutableDictionary *threadDict = [[NSThread currentThread] threadDictionary];
-		NSManagedObjectContext *threadContext = [threadDict objectForKey:@"MO_Context"];
+		NSManagedObjectContext *threadContext = [threadDict objectForKey:kActiveRecordManagedObjectContextKey];
 		if ( threadContext == nil )
 		{
-			threadContext = [self context];
-			[threadDict setObject:threadContext forKey:@"MO_Context"];
-			//[threadContext release];
+			threadContext = [self contextThatNotifiesDefaultContextOnMainThread];
+			[threadDict setObject:threadContext forKey:kActiveRecordManagedObjectContextKey];
 		}
 		return threadContext;
 	}

@@ -47,6 +47,8 @@
 
 + (NSFetchRequest *) requestAll;
 + (NSFetchRequest *) requestAllInContext:(NSManagedObjectContext *)context;
++ (NSFetchRequest *) requestAllWithPredicate:(NSPredicate *)searchTerm;
++ (NSFetchRequest *) requestAllWithPredicate:(NSPredicate *)searchTerm inContext:(NSManagedObjectContext *)context;
 + (NSFetchRequest *) requestAllWhere:(NSString *)property isEqualTo:(id)value;
 + (NSFetchRequest *) requestAllWhere:(NSString *)property isEqualTo:(id)value inContext:(NSManagedObjectContext *)context;
 + (NSFetchRequest *) requestFirstWithPredicate:(NSPredicate *)searchTerm;
@@ -89,6 +91,10 @@
 + (NSArray *)findByAttribute:(NSString *)attribute withValue:(id)searchValue inContext:(NSManagedObjectContext *)context;
 + (NSArray *)findByAttribute:(NSString *)attribute withValue:(id)searchValue andOrderBy:(NSString *)sortTerm ascending:(BOOL)ascending;
 + (NSArray *)findByAttribute:(NSString *)attribute withValue:(id)searchValue andOrderBy:(NSString *)sortTerm ascending:(BOOL)ascending inContext:(NSManagedObjectContext *)context;
+
+
+- (id) inContext:(NSManagedObjectContext *)otherContext;
+- (id) inThreadContext;
 
 #if TARGET_OS_IPHONE
 

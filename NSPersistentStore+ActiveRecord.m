@@ -16,7 +16,7 @@ static NSPersistentStore *defaultPersistentStore = nil;
 	return defaultPersistentStore;
 }
 
-+ (void) setDetaultPersistentStore:(NSPersistentStore *) store
++ (void) setDefaultPersistentStore:(NSPersistentStore *) store
 {
 	[defaultPersistentStore release];
 	defaultPersistentStore = [store retain];
@@ -49,11 +49,12 @@ static NSPersistentStore *defaultPersistentStore = nil;
 + (NSURL *) urlForStoreName:(NSString *)storeFileName
 {
 	NSArray *paths = [NSArray arrayWithObjects:[self applicationDocumentsDirectory], [self applicationLibraryDirectory], nil];
-    
+    NSFileManager *fm = [[[NSFileManager alloc] init] autorelease];
+
     for (NSString *path in paths) 
     {
         NSString *filepath = [path stringByAppendingPathComponent:storeFileName];
-        if ([[NSFileManager defaultManager] fileExistsAtPath:filepath])
+        if ([fm fileExistsAtPath:filepath])
         {
             return [NSURL fileURLWithPath:filepath];
         }

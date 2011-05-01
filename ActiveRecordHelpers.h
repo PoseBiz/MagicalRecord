@@ -11,7 +11,7 @@
 #ifdef NS_BLOCKS_AVAILABLE
 
 @class NSManagedObjectContext;
-typedef void (^CoreDataBlock)(NSManagedObjectContext *);
+typedef void (^CoreDataBlock)(NSManagedObjectContext *context);
 
 #endif
 
@@ -32,6 +32,7 @@ typedef void (^CoreDataBlock)(NSManagedObjectContext *);
 + (void) setupCoreDataStackWithAutoMigratingSqliteStoreNamed:(NSString *)storeName;
 
 #ifdef NS_BLOCKS_AVAILABLE
+#pragma mark DEPRECATED_METHOD
 
 + (void) performSaveDataOperationWithBlock:(CoreDataBlock)block;
 + (void) performSaveDataOperationInBackgroundWithBlock:(CoreDataBlock)block;
