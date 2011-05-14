@@ -92,6 +92,8 @@ static NSString const * kActiveRecordManagedObjectContextKey = @"ActiveRecord_NS
 	DDLogInfo(@"Merging changes to %@context%@", 
           self == [NSManagedObjectContext defaultContext] ? @"*** DEFAULT *** " : @"",
           ([NSThread isMainThread] ? @" *** on Main Thread ***" : @""));
+    
+    // DDLogVerbose(@"Merge notification: %@",notification);
 	[self mergeChangesFromContextDidSaveNotification:notification];
 }
 
