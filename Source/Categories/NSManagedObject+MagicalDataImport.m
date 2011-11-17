@@ -65,16 +65,6 @@ NSString * const kMagicalRecordImportRelationshipTypeKey = @"type";
     }
 }
 
-- (NSManagedObject *) MR_createInstanceForEntity:(NSEntityDescription *)entityDescription withDictionary:(id)objectData
-{
-    NSManagedObject *relatedObject = [NSEntityDescription insertNewObjectForEntityForName:[entityDescription name] 
-                                                                   inManagedObjectContext:[self managedObjectContext]];
-    
-    [relatedObject MR_importValuesForKeysWithDictionary:objectData];
-    
-    return relatedObject;
-}
-
 - (NSManagedObject *) MR_findObjectForRelationship:(NSRelationshipDescription *)relationshipInfo withData:(id)singleRelatedObjectData
 {
     NSEntityDescription *destinationEntity = [relationshipInfo destinationEntity];
@@ -85,7 +75,7 @@ NSString * const kMagicalRecordImportRelationshipTypeKey = @"type";
     {
         NSManagedObjectContext *context = [self managedObjectContext];
         Class managedObjectClass = NSClassFromString([destinationEntity managedObjectClassName]);
-        objectForRelationship = [managedObjectClass findFirstByAttribute:[relationshipInfo MR_primaryKey]
+        objectForRelationship = [managedObjectClass MR_findFirstByAttribute:[relationshipInfo MR_primaryKey]
                                                                withValue:relatedValue
                                                                inContext:context];
     }
@@ -106,7 +96,10 @@ NSString * const kMagicalRecordImportRelationshipTypeKey = @"type";
     
     @try 
     {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
         [self performSelector:selector withObject:relatedObject];        
+#pragma clang diagnostic pop
     }
     @catch (NSException *exception) 
     {
@@ -149,8 +142,6 @@ NSString * const kMagicalRecordImportRelationshipTypeKey = @"type";
 
 - (void) MR_importValuesForKeysWithDictionary:(NSDictionary *)objectData
 {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    
     NSDictionary *attributes = [[self entity] attributesByName];
     [self MR_setAttributes:attributes forKeysWithDictionary:objectData];
     
@@ -162,7 +153,7 @@ NSString * const kMagicalRecordImportRelationshipTypeKey = @"type";
          NSManagedObject *relatedObject = nil;
          if ([objectData isKindOfClass:[NSDictionary class]]) 
          {
-             relatedObject = [self MR_createInstanceForEntity:[relationshipInfo destinationEntity] withDictionary:objectData];
+             relatedObject = [[relationshipInfo destinationEntity] MR_createInstanceFromDictionary:objectData inContext:[self managedObjectContext]];
          }
          else
          {
@@ -172,14 +163,10 @@ NSString * const kMagicalRecordImportRelationshipTypeKey = @"type";
 
          [self MR_addObject:relatedObject forRelationship:relationshipInfo];            
      }];
-    
-    [pool drain];
 }
 
 - (void) MR_updateValuesForKeysWithDictionary:(NSDictionary *)objectData
 {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    
     NSDictionary *attributes = [[self entity] attributesByName];
     [self MR_setAttributes:attributes forKeysWithDictionary:objectData];
     
@@ -192,8 +179,7 @@ NSString * const kMagicalRecordImportRelationshipTypeKey = @"type";
                                                                     withData:objectData];
          if (relatedObject == nil)
          {
-             relatedObject = [self MR_createInstanceForEntity:[relationshipInfo destinationEntity]
-                                               withDictionary:objectData];
+             relatedObject = [[relationshipInfo destinationEntity] MR_createInstanceFromDictionary:objectData inContext:[self managedObjectContext]];
          }
          else
          {
@@ -202,49 +188,47 @@ NSString * const kMagicalRecordImportRelationshipTypeKey = @"type";
          
          [self MR_addObject:relatedObject forRelationship:relationshipInfo];            
      }];
-    
-    [pool drain];
 }
 
 + (id) MR_importFromDictionary:(NSDictionary *)objectData inContext:(NSManagedObjectContext *)context;
 {
-    NSManagedObject *managedObject = [self createInContext:context];
+    NSManagedObject *managedObject = [self MR_createInContext:context];
     [managedObject MR_importValuesForKeysWithDictionary:objectData];
     return managedObject;
 }
 
 + (id) MR_importFromDictionary:(NSDictionary *)objectData
 {
-    return [self MR_importFromDictionary:objectData inContext:[NSManagedObjectContext defaultContext]];
+    return [self MR_importFromDictionary:objectData inContext:[NSManagedObjectContext MR_defaultContext]];
 }
 
 + (id) MR_updateFromDictionary:(NSDictionary *)objectData inContext:(NSManagedObjectContext *)context
 {
-    NSAttributeDescription *primaryAttribute = [[self entityDescription] MR_primaryKeyAttribute];
+    NSAttributeDescription *primaryAttribute = [[self MR_entityDescription] MR_primaryKeyAttribute];
     
     id value = [objectData MR_valueForAttribute:primaryAttribute];
     
-    NSManagedObject *manageObject = [self findFirstByAttribute:[primaryAttribute name] withValue:value inContext:context];
-    if (!manageObject) 
+    NSManagedObject *managedObject = [self MR_findFirstByAttribute:[primaryAttribute name] withValue:value inContext:context];
+    if (!managedObject) 
     {
-        manageObject = [self createInContext:context];
-        [manageObject MR_importValuesForKeysWithDictionary:objectData];
+        managedObject = [self MR_createInContext:context];
+        [managedObject MR_importValuesForKeysWithDictionary:objectData];
     }
     else
     {
-        [manageObject MR_updateValuesForKeysWithDictionary:objectData];
+        [managedObject MR_updateValuesForKeysWithDictionary:objectData];
     }
-    return manageObject;
+    return managedObject;
 }
 
 + (id) MR_updateFromDictionary:(NSDictionary *)objectData
 {
-    return [self MR_updateFromDictionary:objectData inContext:[NSManagedObjectContext defaultContext]];    
+    return [self MR_updateFromDictionary:objectData inContext:[NSManagedObjectContext MR_defaultContext]];
 }
 
 + (NSArray *) MR_importFromArray:(NSArray *)listOfObjectData
 {
-    return [self MR_importFromArray:listOfObjectData inContext:[NSManagedObjectContext defaultContext]];
+    return [self MR_importFromArray:listOfObjectData inContext:[NSManagedObjectContext MR_defaultContext]];
 }
 
 + (NSArray *) MR_importFromArray:(NSArray *)listOfObjectData inContext:(NSManagedObjectContext *)context
@@ -265,7 +249,7 @@ NSString * const kMagicalRecordImportRelationshipTypeKey = @"type";
           }];
      }];
     
-    return [self findAllWithPredicate:[NSPredicate predicateWithFormat:@"self IN %@", objectIDs] inContext:context];
+    return [self MR_findAllWithPredicate:[NSPredicate predicateWithFormat:@"self IN %@", objectIDs] inContext:context];
 }
 
 @end

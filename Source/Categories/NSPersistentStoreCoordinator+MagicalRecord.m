@@ -11,6 +11,7 @@ static NSPersistentStoreCoordinator *defaultCoordinator_ = nil;
 
 @implementation NSPersistentStoreCoordinator (MagicalRecord)
 
+
 + (NSPersistentStoreCoordinator *) MR_defaultStoreCoordinator
 {
     if (defaultCoordinator_ == nil && [MagicalRecordHelpers shouldAutoCreateDefaultPersistentStoreCoordinator])
@@ -22,8 +23,13 @@ static NSPersistentStoreCoordinator *defaultCoordinator_ = nil;
 
 + (void) MR_setDefaultStoreCoordinator:(NSPersistentStoreCoordinator *)coordinator
 {
+#ifndef NS_AUTOMATED_REFCOUNT_UNAVAILABLE
+    [coordinator retain];
+    [defaultCoordinator_ release];
+#endif
 	defaultCoordinator_ = coordinator;
-    if ([NSPersistentStore MR_defaultPersistentStore] == nil)
+    
+    if (defaultCoordinator_ != nil && [NSPersistentStore MR_defaultPersistentStore] == nil)
     {
         NSArray *persistentStores = [defaultCoordinator_ persistentStores];
         if ([persistentStores count])
@@ -80,8 +86,8 @@ static NSPersistentStoreCoordinator *defaultCoordinator_ = nil;
     NSPersistentStoreCoordinator *psc = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:model];
     
     [psc MR_setupSqliteStoreNamed:[persistentStore URL] withOptions:nil];
-    
-    return [psc autorelease];
+    MR_AUTORELEASE(psc);
+    return psc;
 }
 
 + (NSPersistentStoreCoordinator *) MR_coordinatorWithSqliteStoreNamed:(NSString *)storeFileName withOptions:(NSDictionary *)options
@@ -90,8 +96,8 @@ static NSPersistentStoreCoordinator *defaultCoordinator_ = nil;
     NSPersistentStoreCoordinator *psc = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:model];
 
     [psc MR_setupSqliteStoreNamed:storeFileName withOptions:options];
-    
-    return [psc autorelease];
+    MR_AUTORELEASE(psc);
+    return psc;
 }
 
 + (NSPersistentStoreCoordinator *) MR_coordinatorWithSqliteStoreNamed:(NSString *)storeFileName
@@ -121,7 +127,8 @@ static NSPersistentStoreCoordinator *defaultCoordinator_ = nil;
     {
         [coordinator performSelector:@selector(MR_setupAutoMigratingSqliteStoreNamed:) withObject:storeFileName afterDelay:0.5];
     }
-    return [coordinator autorelease];
+    MR_AUTORELEASE(coordinator);
+    return coordinator;
 }
 
 + (NSPersistentStoreCoordinator *) MR_coordinatorWithInMemoryStore
@@ -130,8 +137,9 @@ static NSPersistentStoreCoordinator *defaultCoordinator_ = nil;
 	NSPersistentStoreCoordinator *psc = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:model];
 
     [psc MR_addInMemoryStore];
+    MR_AUTORELEASE(coordinator);
 
-    return [psc autorelease];
+    return psc;
 }
 
 - (NSPersistentStore *) MR_addInMemoryStore
@@ -152,7 +160,9 @@ static NSPersistentStoreCoordinator *defaultCoordinator_ = nil;
 + (NSPersistentStoreCoordinator *) MR_newPersistentStoreCoordinator
 {
 	NSPersistentStoreCoordinator *coordinator = [self MR_coordinatorWithSqliteStoreNamed:kMagicalRecordDefaultStoreFileName];
-    return [coordinator retain];
+    MR_RETAIN(coordinator);
+    return coordinator;
+
 }
 
 @end

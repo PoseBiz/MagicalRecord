@@ -32,9 +32,3 @@ extern NSString * const kMagicalRecordImportRelationshipTypeKey;
 + (id) MR_updateFromDictionary:(NSDictionary *)objectData inContext:(NSManagedObjectContext *)context;
 
 @end
-
-
-#ifdef MR_SHORTHAND
-    #define importFromDictionary                    MR_importFromDictionary
-    #define setValuesForKeysWithJSDONDictionary     MR_setValuesForKeysWithJSONDictionary
-#endif

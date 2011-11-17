@@ -25,8 +25,10 @@ static NSManagedObjectModel *defaultManagedObjectModel_ = nil;
 
 + (void) MR_setDefaultManagedObjectModel:(NSManagedObjectModel *)newDefaultModel
 {
+#ifndef NS_AUTOMATED_REFCOUNT_UNAVAILABLE
     [newDefaultModel retain];
     [defaultManagedObjectModel_ release];
+#endif
 	defaultManagedObjectModel_ = newDefaultModel;
 }
 
@@ -38,7 +40,9 @@ static NSManagedObjectModel *defaultManagedObjectModel_ = nil;
 //deprecated
 + (NSManagedObjectModel *) MR_newManagedObjectModel 
 {
-    return [[self MR_mergedObjectModelFromMainBundle] retain];
+    NSManagedObjectModel *model = [self MR_mergedObjectModelFromMainBundle];
+    MR_AUTORELEASE(model);
+    return model;
 }
 
 + (NSManagedObjectModel *) MR_newModelNamed:(NSString *) modelName inBundleNamed:(NSString *) bundleName
@@ -55,7 +59,8 @@ static NSManagedObjectModel *defaultManagedObjectModel_ = nil;
 
 + (NSManagedObjectModel *) MR_newManagedObjectModelNamed:(NSString *)modelFileName
 {
-	NSString *path = [[NSBundle mainBundle] pathForResource:[modelFileName stringByDeletingPathExtension] ofType:[modelFileName pathExtension]];
+	NSString *path = [[NSBundle mainBundle] pathForResource:[modelFileName stringByDeletingPathExtension] 
+                                                     ofType:[modelFileName pathExtension]];
 	NSURL *momURL = [NSURL fileURLWithPath:path];
 	
 	NSManagedObjectModel *model = [[NSManagedObjectModel alloc] initWithContentsOfURL:momURL];
@@ -64,7 +69,9 @@ static NSManagedObjectModel *defaultManagedObjectModel_ = nil;
 
 + (NSManagedObjectModel *) MR_managedObjectModelNamed:(NSString *)modelFileName
 {
-	return [[self MR_newManagedObjectModelNamed:modelFileName] autorelease];
+    NSManagedObjectModel *model = [self MR_newManagedObjectModelNamed:modelFileName];
+    MR_AUTORELEASE(model);
+	return model;
 }
 
 @end

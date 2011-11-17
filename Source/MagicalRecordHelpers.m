@@ -6,12 +6,23 @@
 //
 
 #import "CoreData+MagicalRecord.h"
+#import <objc/runtime.h>
+
+static NSString * const kMagicalRecordCategoryPrefix = @"MR_";
+static BOOL methodsHaveBeenSwizzled = NO;
 
 static id errorHandlerTarget = nil;
 static SEL errorHandlerAction = nil;
 
 static BOOL shouldAutoCreateManagedObjectModel_;
 static BOOL shouldAutoCreateDefaultPersistentStoreCoordinator_;
+
+//Dynamic shorthand method helpers
+BOOL addMagicalRecordShortHandMethodToPrefixedClassMethod(Class class, SEL selector);
+BOOL addMagicalRecordShorthandMethodToPrefixedInstanceMethod(Class klass, SEL originalSelector);
+
+void swizzleInstanceMethods(Class originalClass, SEL originalSelector, Class targetClass, SEL newSelector);
+void replaceSelectorForTargetWithSourceImpAndSwizzle(Class originalClass, SEL originalSelector, Class newClass, SEL newSelector);
 
 @implementation MagicalRecordHelpers
 
@@ -20,7 +31,7 @@ static BOOL shouldAutoCreateDefaultPersistentStoreCoordinator_;
     errorHandlerTarget = nil;
     errorHandlerAction = nil;
 	[MRCoreDataAction cleanUp];
-	[NSManagedObjectContext setDefaultContext:nil];
+	[NSManagedObjectContext MR_setDefaultContext:nil];
 	[NSManagedObjectModel MR_setDefaultManagedObjectModel:nil];
 	[NSPersistentStoreCoordinator MR_setDefaultStoreCoordinator:nil];
 	[NSPersistentStore MR_setDefaultPersistentStore:nil];
@@ -30,7 +41,7 @@ static BOOL shouldAutoCreateDefaultPersistentStoreCoordinator_;
 {
     NSMutableString *status = [NSMutableString stringWithString:@"Current Default Core Data Stack: ---- \n"];
     
-    [status appendFormat:@"Context:     %@\n", [NSManagedObjectContext defaultContext]];
+    [status appendFormat:@"Context:     %@\n", [NSManagedObjectContext MR_defaultContext]];
     [status appendFormat:@"Model:       %@\n", [NSManagedObjectModel MR_defaultManagedObjectModel]];
     [status appendFormat:@"Coordinator: %@\n", [NSPersistentStoreCoordinator MR_defaultStoreCoordinator]];
     [status appendFormat:@"Store:       %@\n", [NSPersistentStore MR_defaultPersistentStore]];
@@ -73,7 +84,10 @@ static BOOL shouldAutoCreateDefaultPersistentStoreCoordinator_;
         // If a custom error handler is set, call that
         if (errorHandlerTarget != nil && errorHandlerAction != nil) 
 		{
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
             [errorHandlerTarget performSelector:errorHandlerAction withObject:error];
+#pragma clang diagnostic pop
         }
 		else
 		{
@@ -104,19 +118,16 @@ static BOOL shouldAutoCreateDefaultPersistentStoreCoordinator_;
 	[[self class] handleErrors:error];
 }
 
-+ (void) initialize
++ (void) setDefaultModelNamed:(NSString *)modelName;
 {
-    if (self == [MagicalRecordHelpers class]) 
-    {
-        [self setShouldAutoCreateManagedObjectModel:YES];
-        [self setShouldAutoCreateDefaultPersistentStoreCoordinator:YES];
-    }
+    NSManagedObjectModel *model = [NSManagedObjectModel MR_managedObjectModelNamed:modelName];
+    [NSManagedObjectModel MR_setDefaultManagedObjectModel:model];
 }
 
 + (void) setupCoreDataStack
 {
-    NSManagedObjectContext *context = [NSManagedObjectContext context];
-	[NSManagedObjectContext setDefaultContext:context];
+    NSManagedObjectContext *context = [NSManagedObjectContext MR_context];
+	[NSManagedObjectContext MR_setDefaultContext:context];
 }
 
 + (void) setupAutoMigratingCoreDataStack
@@ -129,8 +140,8 @@ static BOOL shouldAutoCreateDefaultPersistentStoreCoordinator_;
 	NSPersistentStoreCoordinator *coordinator = [NSPersistentStoreCoordinator MR_coordinatorWithSqliteStoreNamed:storeName];
 	[NSPersistentStoreCoordinator MR_setDefaultStoreCoordinator:coordinator];
 	
-	NSManagedObjectContext *context = [NSManagedObjectContext contextWithStoreCoordinator:coordinator];
-	[NSManagedObjectContext setDefaultContext:context];
+	NSManagedObjectContext *context = [NSManagedObjectContext MR_contextWithStoreCoordinator:coordinator];
+	[NSManagedObjectContext MR_setDefaultContext:context];
 }
 
 + (void) setupCoreDataStackWithAutoMigratingSqliteStoreNamed:(NSString *)storeName
@@ -138,8 +149,8 @@ static BOOL shouldAutoCreateDefaultPersistentStoreCoordinator_;
     NSPersistentStoreCoordinator *coordinator = [NSPersistentStoreCoordinator MR_coordinatorWithAutoMigratingSqliteStoreNamed:storeName];
     [NSPersistentStoreCoordinator MR_setDefaultStoreCoordinator:coordinator];
     
-    NSManagedObjectContext *context = [NSManagedObjectContext contextWithStoreCoordinator:coordinator];
-    [NSManagedObjectContext setDefaultContext:context];
+    NSManagedObjectContext *context = [NSManagedObjectContext MR_contextWithStoreCoordinator:coordinator];
+    [NSManagedObjectContext MR_setDefaultContext:context];
 }
 
 + (void) setupCoreDataStackWithInMemoryStore
@@ -147,8 +158,8 @@ static BOOL shouldAutoCreateDefaultPersistentStoreCoordinator_;
 	NSPersistentStoreCoordinator *coordinator = [NSPersistentStoreCoordinator MR_coordinatorWithInMemoryStore];
 	[NSPersistentStoreCoordinator MR_setDefaultStoreCoordinator:coordinator];
 	
-	NSManagedObjectContext *context = [NSManagedObjectContext contextWithStoreCoordinator:coordinator];
-	[NSManagedObjectContext setDefaultContext:context];
+	NSManagedObjectContext *context = [NSManagedObjectContext MR_contextWithStoreCoordinator:coordinator];
+	[NSManagedObjectContext MR_setDefaultContext:context];
 }
 
 + (BOOL) shouldAutoCreateManagedObjectModel;
@@ -171,6 +182,7 @@ static BOOL shouldAutoCreateDefaultPersistentStoreCoordinator_;
     shouldAutoCreateDefaultPersistentStoreCoordinator_ = shouldAutoCreate;
 }
 
+
 #ifdef NS_BLOCKS_AVAILABLE
 #pragma mark DEPRECATED_METHOD
 
@@ -181,7 +193,7 @@ static BOOL shouldAutoCreateDefaultPersistentStoreCoordinator_;
 
 + (void) performSaveDataOperationInBackgroundWithBlock:(CoreDataBlock)block;
 {
-    [MRCoreDataAction saveDataWithBlock:block];
+    [MRCoreDataAction saveDataInBackgroundWithBlock:block];
 }
 
 + (void) performLookupOperationWithBlock:(CoreDataBlock)block;
@@ -196,7 +208,136 @@ static BOOL shouldAutoCreateDefaultPersistentStoreCoordinator_;
 
 #endif
 
+#pragma mark - Support methods for shorthand methods
+
++ (BOOL) MR_resolveClassMethod:(SEL)originalSelector
+{
+    BOOL resolvedClassMethod = [self MR_resolveClassMethod:originalSelector];
+    if (!resolvedClassMethod) 
+    {
+        resolvedClassMethod = addMagicalRecordShortHandMethodToPrefixedClassMethod(self, originalSelector);
+    }
+    return resolvedClassMethod;
+}
+
++ (BOOL) MR_resolveInstanceMethod:(SEL)originalSelector
+{
+    BOOL resolvedClassMethod = [self MR_resolveInstanceMethod:originalSelector];
+    if (!resolvedClassMethod) 
+    {
+        resolvedClassMethod = addMagicalRecordShorthandMethodToPrefixedInstanceMethod(self, originalSelector);
+    }
+    return resolvedClassMethod;
+}
+
+//In order to add support for non-prefixed AND prefixed methods, we need to swap the existing resolveClassMethod: and resolveInstanceMethod: implementations with the one in this class.
++ (void) updateResolveMethodsForClass:(Class)klass
+{
+    replaceSelectorForTargetWithSourceImpAndSwizzle(self, @selector(MR_resolveClassMethod:), klass, @selector(resolveClassMethod:));
+    replaceSelectorForTargetWithSourceImpAndSwizzle(self, @selector(MR_resolveInstanceMethod:), klass, @selector(resolveInstanceMethod:));    
+}
+
++ (void) swizzleShorthandMethods;
+{
+    if (methodsHaveBeenSwizzled) return;
+    
+    NSArray *classes = [NSArray arrayWithObjects:
+                        [NSManagedObject class],
+                        [NSManagedObjectContext class], 
+                        [NSManagedObjectModel class], 
+                        [NSPersistentStore class], 
+                        [NSPersistentStoreCoordinator class], nil];
+    
+    [classes enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        Class klass = (Class)obj;
+        
+        [self updateResolveMethodsForClass:klass];
+    }];
+    methodsHaveBeenSwizzled = YES;
+}
+
+#pragma mark - initialize
+
++ (void) initialize;
+{
+    if (self == [MagicalRecordHelpers class]) 
+    {
+        [self swizzleShorthandMethods];
+        [self setShouldAutoCreateManagedObjectModel:YES];
+        [self setShouldAutoCreateDefaultPersistentStoreCoordinator:YES];
+    }
+}
+
 @end
+
+#pragma mark - Support functions for runtime shorthand Method calling
+
+void replaceSelectorForTargetWithSourceImpAndSwizzle(Class sourceClass, SEL sourceSelector, Class targetClass, SEL targetSelector)
+{
+    Method sourceClassMethod = class_getClassMethod(sourceClass, sourceSelector);
+    Method targetClassMethod = class_getClassMethod(targetClass, targetSelector);
+
+    Class targetMetaClass = objc_getMetaClass([NSStringFromClass(targetClass) cStringUsingEncoding:NSUTF8StringEncoding]);
+    
+    BOOL methodWasAdded = class_addMethod(targetMetaClass, sourceSelector,
+                                          method_getImplementation(targetClassMethod),
+                                          method_getTypeEncoding(targetClassMethod));
+    
+    if (methodWasAdded)
+    {
+        class_replaceMethod(targetMetaClass, targetSelector, 
+                            method_getImplementation(sourceClassMethod), 
+                            method_getTypeEncoding(sourceClassMethod));
+    }
+}
+
+BOOL addMagicalRecordShorthandMethodToPrefixedInstanceMethod(Class klass, SEL originalSelector)
+{
+    NSString *originalSelectorString = NSStringFromSelector(originalSelector);
+    if ([originalSelectorString hasPrefix:@"_"] || [originalSelectorString hasPrefix:@"init"]) return NO;
+    
+    if (![originalSelectorString hasPrefix:kMagicalRecordCategoryPrefix]) 
+    {
+        NSString *prefixedSelector = [kMagicalRecordCategoryPrefix stringByAppendingString:originalSelectorString];
+        Method existingMethod = class_getInstanceMethod(klass, NSSelectorFromString(prefixedSelector));
+        
+        if (existingMethod) 
+        {
+            BOOL methodWasAdded = class_addMethod(klass, 
+                                                  originalSelector, 
+                                                  method_getImplementation(existingMethod), 
+                                                  method_getTypeEncoding(existingMethod));
+            
+            return methodWasAdded;
+        }
+    }
+    return NO;
+}
+                                    
+
+BOOL addMagicalRecordShortHandMethodToPrefixedClassMethod(Class klass, SEL originalSelector)
+{
+    NSString *originalSelectorString = NSStringFromSelector(originalSelector);
+    if (![originalSelectorString hasPrefix:kMagicalRecordCategoryPrefix]) 
+    {
+        NSString *prefixedSelector = [kMagicalRecordCategoryPrefix stringByAppendingString:originalSelectorString];
+        Method existingMethod = class_getClassMethod(klass, NSSelectorFromString(prefixedSelector));
+        
+        if (existingMethod) 
+        {
+            Class metaClass = objc_getMetaClass([NSStringFromClass(klass) cStringUsingEncoding:NSUTF8StringEncoding]);
+            BOOL methodWasAdded = class_addMethod(metaClass, 
+                                                  originalSelector, 
+                                                  method_getImplementation(existingMethod), 
+                                                  method_getTypeEncoding(existingMethod));
+            
+            return methodWasAdded;
+        }
+    }
+    return NO;
+}
+
+#pragma mark - Data import helper functions
 
 NSString * attributeNameFromString(NSString *value)
 {
@@ -220,12 +361,15 @@ NSDate * adjustDateForDST(NSDate *date)
 
 NSDate * dateFromString(NSString *value, NSString *format)
 {
-    NSDateFormatter *formatter = [[[NSDateFormatter alloc] init] autorelease];
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
     [formatter setTimeZone:[NSTimeZone localTimeZone]];
     [formatter setLocale:[NSLocale currentLocale]];
     [formatter setDateFormat:format];
     
     NSDate *parsedDate = [formatter dateFromString:value];
+#ifndef NS_AUTOMATED_REFCOUNT_UNAVAILABLE
+    [formatter autorelease];
+#endif
     
     return parsedDate;
 }
@@ -250,6 +394,8 @@ NSInteger* newColorComponentsFromString(NSString *serializedColor)
             componentValue++;
         }
     }
+    //else if ([colorType hasPrefix:@"hsba"])
+    //else if ([colorType hasPrefix:@""])
     return componentValues;
 }
 

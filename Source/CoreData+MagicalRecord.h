@@ -15,6 +15,20 @@
 
 #import <CoreData/CoreData.h>
 
+#ifndef NS_AUTOMATED_REFCOUNT_UNAVAILABLE
+#define MR_RETAIN(xx)           [xx retain];
+#define MR_RELEASE(xx)          [xx release];
+#define MR_AUTORELEASE(xx)      [xx autorelease];
+#else
+#define MR_RETAIN(xx)  ((void)0)
+#define MR_RELEASE(xx)  ((void)0)
+#define MR_AUTORELEASE(xx)  ((void)0)
+#endif
+
+#ifdef MR_SHORTHAND
+#import "MagicalRecordShorthand.h"
+#endif
+
 #import "MagicalRecordHelpers.h"
 #import "MRCoreDataAction.h"
 

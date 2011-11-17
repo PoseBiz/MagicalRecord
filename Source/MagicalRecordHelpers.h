@@ -16,7 +16,7 @@ typedef void (^CoreDataBlock)(NSManagedObjectContext *context);
 
 #endif
 
-@interface MagicalRecordHelpers : NSObject {}
+@interface MagicalRecordHelpers : NSObject
 
 + (NSString *) currentStack;
 
@@ -28,6 +28,8 @@ typedef void (^CoreDataBlock)(NSManagedObjectContext *context);
 + (void) setErrorHandlerTarget:(id)target action:(SEL)action;
 + (SEL) errorHandlerAction;
 + (id) errorHandlerTarget;
+
++ (void) setDefaultModelNamed:(NSString *)modelName;
 
 //global options
 // enable/disable logging
@@ -76,5 +78,5 @@ UIColor * UIColorFromString(NSString *serializedColor);
 NSColor * NSColorFromString(NSString *serializedColor);
 
 #endif
-id (*colorFromString)(NSString *);
+extern id (*colorFromString)(NSString *);
 
