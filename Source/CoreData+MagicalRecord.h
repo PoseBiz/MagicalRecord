@@ -4,9 +4,6 @@
 
 #define kCreateNewCoordinatorOnBackgroundOperations     0
 
-#define ENABLE_ACTIVE_RECORD_LOGGING
-#define MR_SHORTHAND 1
-
 #ifdef ENABLE_ACTIVE_RECORD_LOGGING
     #define ARLog(...) NSLog(@"%s(%p) %@", __PRETTY_FUNCTION__, self, [NSString stringWithFormat:__VA_ARGS__])
 #else
