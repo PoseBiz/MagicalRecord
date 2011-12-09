@@ -47,7 +47,7 @@ void cleanup_save_queue()
 {
     NSManagedObjectContext *mainContext  = [NSManagedObjectContext MR_defaultContext];
     NSManagedObjectContext *localContext = mainContext;
-    
+    NSPersistentStoreCoordinator *defaultCoordinator = [NSPersistentStoreCoordinator MR_defaultStoreCoordinator];
     if (![NSThread isMainThread]) 
     {
         
@@ -56,6 +56,10 @@ void cleanup_save_queue()
         localContext = [NSManagedObjectContext contextThatNotifiesDefaultContextOnMainThreadWithCoordinator:localCoordinator];
 #else
         localContext = [NSManagedObjectContext MR_contextThatNotifiesDefaultContextOnMainThread];
+        if ([MagicalRecordHelpers isICloudEnabled]) 
+        {
+            [localContext MR_observeiCloudChangesInCoordinator:defaultCoordinator];
+        }
 #endif
         
         [mainContext setMergePolicy:NSMergeByPropertyStoreTrumpMergePolicy];
@@ -70,6 +74,10 @@ void cleanup_save_queue()
     }
     
     localContext.MR_notifiesMainContextOnSave = NO;
+    if ([MagicalRecordHelpers isICloudEnabled]) 
+    {
+        [localContext MR_stopObservingiCloudChangesInCoordinator:defaultCoordinator];
+    }
     [mainContext setMergePolicy:NSMergeByPropertyObjectTrumpMergePolicy];
 }
 

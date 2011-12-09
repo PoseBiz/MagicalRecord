@@ -22,10 +22,8 @@ static NSPersistentStore *defaultPersistentStore_ = nil;
 
 + (void) MR_setDefaultPersistentStore:(NSPersistentStore *) store
 {
-#ifndef NS_AUTOMATED_REFCOUNT_UNAVAILABLE
-    [store retain];
-    [defaultPersistentStore_ release];
-#endif
+    MR_RETAIN(store);
+    MR_RELEASE(defaultPersistentStore_);
 	defaultPersistentStore_ = store;
 }
 
@@ -62,6 +60,19 @@ static NSPersistentStore *defaultPersistentStore_ = nil;
 
     //set default url
     return [NSURL fileURLWithPath:[[self MR_applicationStorageDirectory] stringByAppendingPathComponent:storeFileName]];
+}
+
++ (NSURL *) MR_cloudURLForUbiqutiousContainer:(NSString *)bucketName;
+{
+    return nil;
+    NSFileManager *fileManager = [[NSFileManager alloc] init];
+    NSURL *cloudURL = nil;
+    if ([fileManager respondsToSelector:@selector(URLForUbiquityContainerIdentifier:)])
+    {
+        cloudURL = [fileManager URLForUbiquityContainerIdentifier:bucketName];
+    }
+    MR_AUTORELEASE(fileManager);
+    return cloudURL;
 }
 
 + (NSURL *) MR_defaultLocalStoreUrl
