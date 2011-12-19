@@ -61,7 +61,6 @@ void cleanup_save_queue()
             [localContext MR_observeiCloudChangesInCoordinator:defaultCoordinator];
         }
 #endif
-        
         [mainContext setMergePolicy:NSMergeByPropertyStoreTrumpMergePolicy];
         [localContext setMergePolicy:NSOverwriteMergePolicy];
     }

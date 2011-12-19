@@ -5,7 +5,8 @@
 
 
 
-@interface NSManagedObject (NSManagedObject_DataImportShortHand)
+
+@interface NSManagedObject (MagicalRecord_DataImportShortHand)
 - (void) importValuesForKeysWithDictionary:(id)objectData;
 - (void) updateValuesForKeysWithDictionary:(id)objectData;
 + (id) importFromDictionary:(id)data;
@@ -87,6 +88,8 @@
 + (NSArray *) findByAttribute:(NSString *)attribute withValue:(id)searchValue inContext:(NSManagedObjectContext *)context;
 + (NSArray *) findByAttribute:(NSString *)attribute withValue:(id)searchValue andOrderBy:(NSString *)sortTerm ascending:(BOOL)ascending;
 + (NSArray *) findByAttribute:(NSString *)attribute withValue:(id)searchValue andOrderBy:(NSString *)sortTerm ascending:(BOOL)ascending inContext:(NSManagedObjectContext *)context;
++ (NSNumber *)aggregateOperation:(NSString *)function onAttribute:(NSString *)attributeName withPredicate:(NSPredicate *)predicate inContext:(NSManagedObjectContext *)context;
++ (NSNumber *)aggregateOperation:(NSString *)function onAttribute:(NSString *)attributeName withPredicate:(NSPredicate *)predicate;
 - (id) inContext:(NSManagedObjectContext *)otherContext;
 - (id) inThreadContext;
 + (void) performFetch:(NSFetchedResultsController *)controller;
