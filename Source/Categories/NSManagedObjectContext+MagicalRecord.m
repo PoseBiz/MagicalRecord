@@ -189,16 +189,16 @@ NSString * const kMagicalRecordDidMergeChangesFromiCloudNotification = @"kMagica
 
 - (void) MR_saveWrapper;
 {
-//#if __IPHONE_OS_VERSION_MAX_ALLOWED == __IPHONE_5_0
-//    @autoreleasepool
-//    {
-//        [self MR_save];
-//    }
-//#else
+#if MR_USE_ARC
+    @autoreleasepool
+    {
+        [self MR_save];
+    }
+#else
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     [self MR_save];
     [pool drain];
-//#endif
+#endif
 }
 
 #pragma mark - Threading Helpers

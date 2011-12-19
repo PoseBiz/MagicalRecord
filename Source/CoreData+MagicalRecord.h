@@ -16,23 +16,22 @@
 
 #import <CoreData/CoreData.h>
 
-// Don't use ARC yet
-//#ifndef MR_USE_ARC
-//#define MR_USE_ARC 1
-//#endif
+#ifndef MR_USE_ARC
+#define MR_USE_ARC 1
+#endif
 
 #ifndef kCFCoreFoundationVersionNumber_iPhoneOS_5_0
 #define kCFCoreFoundationVersionNumber_iPhoneOS_5_0 674.0
 #endif
 
 #define PRIVATE_QUEUES_ENABLED(...) \
-    if (NO) \
+    if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iPhoneOS_5_0) \
     { \
         __VA_ARGS__ \
     }
 
 #define THREAD_ISOLATION_ENABLED(...) \
-    if (YES) \
+    if (kCFCoreFoundationVersionNumber < kCFCoreFoundationVersionNumber_iPhoneOS_5_0) \
     { \
         __VA_ARGS__ \
     }
