@@ -43,13 +43,13 @@
 #endif
 
 #define PRIVATE_QUEUES_ENABLED(...) \
-    if (kCFCoreFoundationVersionNumber >= MR_MINIMUM_PRIVATE_QUEUE_CF_VERSION) \
+    if (NO) \
     { \
         __VA_ARGS__ \
     }
 
 #define THREAD_ISOLATION_ENABLED(...) \
-    if (kCFCoreFoundationVersionNumber < MR_MINIMUM_PRIVATE_QUEUE_CF_VERSION) \
+    if (YES) \
     { \
         __VA_ARGS__ \
     }
