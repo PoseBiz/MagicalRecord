@@ -105,8 +105,7 @@
         {
             [[[self class] MR_rootSavingContext] MR_saveInBackgroundErrorHandler:errorCallback completion:completion];
         }
-
-        if (completion && self == [[self class] MR_rootSavingContext])
+        else if (completion)
         {
             dispatch_async(dispatch_get_main_queue(), completion);
         }
