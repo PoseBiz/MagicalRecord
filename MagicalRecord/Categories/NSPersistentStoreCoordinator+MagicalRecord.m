@@ -127,9 +127,14 @@ NSString * const kMagicalRecordPSCDidCompleteiCloudSetupNotification = @"kMagica
 
 + (NSDictionary *) MR_autoMigrationOptions;
 {
+    // Adding the journalling mode recommended by apple
+    NSMutableDictionary *sqliteOptions = [NSMutableDictionary dictionary];
+    [sqliteOptions setObject:@"WAL" forKey:@"journal_mode"];
+    
     NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys:
                              [NSNumber numberWithBool:YES], NSMigratePersistentStoresAutomaticallyOption,
                              [NSNumber numberWithBool:YES], NSInferMappingModelAutomaticallyOption,
+                             sqliteOptions, NSSQLitePragmasOption,
                              nil];
     return options;
 }
