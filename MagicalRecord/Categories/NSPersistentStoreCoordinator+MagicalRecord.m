@@ -95,14 +95,6 @@ NSString * const kMagicalRecordPSCDidCompleteiCloudSetupNotification = @"kMagica
         }
                 
         [MagicalRecord handleErrors:error];
-        
-        // Attempt to delete the persistent store and recreate it
-        [[NSFileManager defaultManager] removeItemAtURL:url error:nil];
-        store = [self addPersistentStoreWithType:NSSQLiteStoreType
-                                   configuration:nil
-                                             URL:url
-                                         options:options
-                                           error:&error];
     }
     return store;
 }

@@ -120,7 +120,7 @@
     NSArray *properties = [NSArray arrayWithObject:ed];
     
     NSFetchRequest *request = [self MR_requestAllWithPredicate:predicate inContext:context];
-//    [request setPropertiesToFetch:properties];
+    [request setPropertiesToFetch:properties];
     [request setResultType:NSDictionaryResultType];    
     
     NSDictionary *resultsDictionary = [self MR_executeFetchRequestAndReturnFirstObject:request inContext:context];

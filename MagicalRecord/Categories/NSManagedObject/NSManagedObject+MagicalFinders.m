@@ -147,7 +147,7 @@
 {
 	NSFetchRequest *request = [self MR_createFetchRequestInContext:context];
 	[request setPredicate:searchTerm];
-//	[request setPropertiesToFetch:attributes];
+	[request setPropertiesToFetch:attributes];
 	
 	return [self MR_executeFetchRequestAndReturnFirstObject:request inContext:context];
 }
@@ -165,7 +165,7 @@
                                                 ascending:ascending
                                             withPredicate:searchTerm
                                                 inContext:context];
-//	[request setPropertiesToFetch:[self MR_propertiesNamed:attributes]];
+	[request setPropertiesToFetch:[self MR_propertiesNamed:attributes]];
 	
 	return [self MR_executeFetchRequestAndReturnFirstObject:request inContext:context];
 }
